@@ -1,0 +1,74 @@
+* {
+  margin: 0px;
+  padding: 0px;
+  box-sizing: border-box;
+}
+.flex-container {
+  display: flex;
+}
+.canvas-cell {
+  height: 20px;
+  width: 20px;
+  border: 1px solid black;
+  margin: 0px;
+  background-color: white;
+}
+.canvas-table {
+  margin-top: 50px;
+  border: 1px solid black;
+  border-spacing: 0px;
+  padding: 15px;
+  width: auto;
+  height: auto;
+  background-color:  grey;
+  border-radius: 2%;
+}
+.canvas {
+  margin-left: auto;
+  margin-right: auto;
+  /* background-color: red; */
+}
+.side-column {
+  background-color: grey;
+  width: 24.8%;
+  height: 1000px;
+  margin: 0
+}
+.chooser {
+  margin: auto;
+  margin-top: 25%
+}
+.color-chosen {
+  margin: auto;
+  margin-top: 30%;
+}
+.color-chosen td {
+  height: 200px;
+  width: 200px;
+  border: 3px solid black;
+}
+/* COLORS */
+.option {
+  height: 50px;
+  width: 50px;
+  border: 2px solid black;
+}
+
+.red {
+  background-color: red;
+}
+.orange {
+  background-color: orange;
+}
+.yellow {
+  background-color: yellow;
+}
+.green {
+  background-color: green;
+}
+.blue {
+  background-color: blue;
+}
+.purple {
+  background-color: purple;
+}
