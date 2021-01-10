@@ -1,95 +1,126 @@
 // API Key : 184723ca
 // data request: http://www.omdbapi.com/?apikey=[yourkey]&s=movietosearch
-// using Axios to fetch data from the API
-const fetchData = async (searchTerm) => {
-  const response = await axios.get("http://www.omdbapi.com/", {
-    //axios automatically sends request with the paramenters set
-    params: {
-      apikey: '184723ca',
-      s: searchTerm,
-    }
-  });
-  //the api gives an error on incomplete words
-  //if the api sends back an Error, return an empty array
-  if (response.data.Error) {
-    return [];
-  }
-  return response.data.Search;
-};
-
-//Instead of hardcoding the dropdown into HTML, we make a reusable element
-//classes are from Bulma framework
-const root = document.querySelector('.autocomplete')
-root.innerHTML = `
-  <label><b>Search For a Movie</b></label>
-  <input class='input'>
-  <div class='dropdown'>
-    <div class='dropdown-menu'>
-      <div class='dropdown-content results'></div>
-    </div>
-  </div>
-`;
-
-const input = document.querySelector('input');
-const dropdown = document.querySelector('.dropdown');
-const resultsWrapper = document.querySelector('.results');
-
-//fetchData is an async function. It will return a promise
-//to get the data instead, we have to make onInput an async function as well
-const onInput = async (event) => {
-  const movies = await fetchData(event.target.value);
-  //close the dropdown if input is empty
-  if (!movies.length) {
-    dropdown.classList.remove('is-active');
-    return;
-  }
-  //reset the dropdown on every search
-  resultsWrapper.innerHTML = '';
-  // create the dropdown options
-  dropdown.classList.add('is-active');
-  for (let movie of movies) {
-    //Bulma uses anchor to create options in a dropdown menu
-    const option = document.createElement('a');
+//function from autocomplete.js
+const autoCompleteConfig = {
+  renderOption: (movie)=>{
     //check for missing images
     const imgSrc = movie.Poster === 'N/A' ? '' : movie.Poster
-
-    //create movie anchors in the dropdown
-    option.classList.add('dropdown-item');
-    option.innerHTML = `
+    return `
       <img src="${movie.Poster}"/>
-      ${movie.Title}
+      ${movie.Title} (${movie.Year})
     `;
-    //on click on an option, get movie info
-    option.addEventListener('click', ()=>{
-      dropdown.classList.remove('is-active');
-      input.value = movie.Title;
-      onMovieSelect(movie);
-    })
-    //append all the options to the dropdown
-    resultsWrapper.appendChild(option)
+  },
+  inputValue(movie) {
+    return movie.Title
+  },
+  // using Axios to fetch data from the API
+  async fetchData(searchTerm) {
+    const response = await axios.get("http://www.omdbapi.com/", {
+      //axios automatically sends request with the paramenters set
+      params: {
+        apikey: '184723ca',
+        s: searchTerm,
+      }
+    });
+    //the api gives an error on incomplete words
+    //if the api sends back an Error, return an empty array
+    if (response.data.Error) {
+      return [];
+    }
+    return response.data.Search;
   }
 };
 
-//debounce function found in utils.js
-input.addEventListener('input', debounce(onInput,1000));
-document.addEventListener('click', event => {
-  if (!root.contains(event.target)) {
-    dropdown.classList.remove('is-active')
-  }
-})
+createAutoComplete({
+  //destructure autocompleteconfig inside the createautocomplete function.
+  //the only variable changing is the root
+  //onOptionSelect here to get movieTemplate for both columns
+  ...autoCompleteConfig,
+  root: document.querySelector('#left-autocomplete'),
+  onOptionSelect(movie) {
+    //hide the tutorial bar on selecting the movie
+    //.is-hidden is a bulma class
+    document.querySelector('.tutorial').classList.add('is-hidden');
+    onMovieSelect(movie, document.querySelector('#left-summary'), 'left');
+  },
+});
 
+createAutoComplete({
+  ...autoCompleteConfig,
+  root: document.querySelector('#right-autocomplete'),
+  onOptionSelect(movie) {
+    document.querySelector('.tutorial').classList.add('is-hidden');
+    onMovieSelect(movie, document.querySelector('#right-summary'), 'right');
+  },
+});
+
+//create variables for each movie to compare them later
+let leftMovie;
+let rightMovie;
 //use axios to get movie details, function similar to fetchData
-const onMovieSelect = async (movie) => {
+const onMovieSelect = async (movie, summaryElement, side) => {
   const response = await axios.get("http://www.omdbapi.com/", {
     params: {
       apikey: '184723ca',
       i: movie.imdbID,
     }
   });
-  document.querySelector('.summary').innerHTML = movieTemplate(response.data)
+  //create movie detail templates inside html
+  summaryElement.innerHTML = movieTemplate(response.data);
+  //check the side of the search and compare the movies
+  //runComparison helper function defined later
+  if (side==='left') {
+    leftMovie = response.data;
+  } else {
+    rightMovie = response.data;
+  }
+  //runComparison will run only when both movies have been chosen
+  if (leftMovie && rightMovie) {
+    runComparison();
+  }
+};
+
+const runComparison = () => {
+  const leftSideStats = document.querySelectorAll('#left-summary .notification');
+  const rightSideStats = document.querySelectorAll('#right-summary .notification');
+
+leftSideStats.forEach((leftStat, index)=> {
+  const rightStat = rightSideStats[index];
+  //dataset.value to retrieve the data-value
+  const leftSideValue = parseInt(leftStat.dataset.value);
+  const rightSideValue = parseInt(rightStat.dataset.value);
+
+  if (rightSideValue > leftSideValue) {
+    leftStat.classList.remove('is-primary');
+    leftStat.classList.add('is-warning');
+  } else {
+    rightStat.classList.remove('is-primary');
+    rightStat.classList.add('is-warning');
+  }
+  });
 };
 
 const movieTemplate = (movieDetail) => {
+  const dollars = parseInt(
+    movieDetail.BoxOffice.replace(/\$/g, '').replace(/,/g, '')
+  );
+  const metascore = parseInt(movieDetail.Metascore);
+  const imdbRating = parseFloat(movieDetail.imdbRating);
+  const imdbVotes = parseInt(movieDetail.imdbVotes.replace(/,/g, ''));
+  // let count = 0;
+  //can use forEach instead of reduce, the latter is a refactor
+  const awards = movieDetail.Awards.split(' ').reduce((prev, word)=>{
+    //parseInt on a string not number will return NaN
+    const value = parseInt(word);
+    //isNaN() is a built in function in the browser
+    if (isNaN(value)) {
+      return prev;
+    } else {
+      return prev + value;
+    };
+  });
+  //for every element in the details we add a 'data-value' property
+  //use the property to compare the two movies
   return `
     <article class="media">
       <figure class="media-left">
@@ -105,23 +136,23 @@ const movieTemplate = (movieDetail) => {
         </div>
       </div>
     </article>
-    <article class="notification is-primary">
+    <article data-value=${awards} class="notification is-primary">
       <p class="title">${movieDetail.Awards}</p>
       <p class="subtitle">Awards</p>
     </article>
-    <article class="notification is-primary">
+    <article data-value=${dollars} class="notification is-primary">
       <p class="title">${movieDetail.BoxOffice}</p>
       <p class="subtitle">Box Office</p>
     </article>
-    <article class="notification is-primary">
+    <article data-value=${metascore} class="notification is-primary">
       <p class="title">${movieDetail.Metascore}</p>
       <p class="subtitle">Metascore</p>
     </article>
-    <article class="notification is-primary">
+    <article data-value=${imdbRating} class="notification is-primary">
       <p class="title">${movieDetail.imdbRating}</p>
       <p class="subtitle">IMDB Rating</p>
     </article>
-    <article class="notification is-primary">
+    <article data-value=${imdbVotes} class="notification is-primary">
       <p class="title">${movieDetail.imdbVotes}</p>
       <p class="subtitle">IMDB Votes</p>
     </article>

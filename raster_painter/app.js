@@ -25,7 +25,20 @@ for (let cell of cells) {
     isDrawing=false;
   })
 }
-
 document.addEventListener('mouseup', ()=>{
   isDrawing=false;
+})
+
+const clearTableBtn = document.querySelector('#clear-table')
+clearTableBtn.addEventListener('click', ()=>{
+  for (let cell of cells) {
+    cell.style.backgroundColor = '';
+  }
+})
+
+const fillTableBtn = document.querySelector('#fill-table')
+fillTableBtn.addEventListener('click', ()=>{
+  for (let cell of cells) {
+    cell.style.backgroundColor = color;
+  }
 })

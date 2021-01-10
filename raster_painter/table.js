@@ -3,7 +3,7 @@ let numberOfRows = '';
 const tableRowStr = `<tr class="canvas-row">
 </tr>`;
 
-for (let i = 0; i < 25; i++) {
+for (let i = 0; i < 100; i++) {
   numberOfRows+=tableRowStr;
 };
 
@@ -14,7 +14,7 @@ let numberOfCells = '';
 const tableCellStr = `<td class='canvas-cell'></td>
 `;
 
-for (let i = 0; i < 25; i++) {
+for (let i = 0; i < 100; i++) {
   numberOfCells+=tableCellStr;
 }
 
