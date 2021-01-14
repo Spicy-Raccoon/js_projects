@@ -10,6 +10,7 @@ const fs = require('fs');
 // promisify method
 // const util = require('util');
 // const lstat = util.promisify(fs.lstat);
+
 //fs has a built in promises module, destructure lstat from it
 const { lstat } = fs.promises;
 //use npm chalk package for coloring (npm install chalk)
